@@ -7,6 +7,7 @@
 import pandas as pd
 import os
 import json
+import re
 
 
 # In[12]:
@@ -73,7 +74,8 @@ def get_text(year, label, train_data, train_label):
         title_list = titles.to_list()
         context_count += len(title_list)
         for l in title_list:
-            train_data.append(l.split(" "))
+            clean_text = re.sub(r"[^A-Za-z0-9\s]+", "", l)
+            train_data.append(clean_text.split(" "))
             train_label.append(LABEL_DICT[label])
             
         texts = df['TEXT']
@@ -81,7 +83,8 @@ def get_text(year, label, train_data, train_label):
         text_list = texts.to_list()
         context_count += len(text_list)
         for l in text_list:
-            train_data.append(l.split(" "))
+            clean_text = re.sub(r"[^A-Za-z0-9\s]+", "", l)
+            train_data.append(clean_text.split(" "))
             train_label.append(LABEL_DICT[label])
 #         if pd.isna(df[i]['TITLE']) == False:
 #             train_data.append(df['TITLE'].split(" "))
