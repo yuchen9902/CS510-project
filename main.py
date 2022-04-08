@@ -62,9 +62,9 @@ def nfold_estimation(data_set, data_label, uni=True, bi=False, multi=False):
 
 
 def main(onefold=True, uni=True,bi=True,multi=True):
-    file_data = open('processed_data1/data.json', 'r')
+    file_data = open('processed_data/data.json', 'r')
     data_set = json.load(file_data)
-    file_label = open('processed_data1/label.json', 'r')
+    file_label = open('processed_data/label.json', 'r')
     data_label = json.load(file_label)
 
     if onefold:
