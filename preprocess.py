@@ -77,7 +77,8 @@ def get_text(year, label, train_data, train_label):
         context_count += len(title_list)
         for l in title_list:
             clean_text = re.sub(r"[^A-Za-z0-9\s]+", "", l)
-            train_data.append(clean_text.split(" "))
+            # train_data.append(clean_text.split(" "))
+            train_data.append(clean_text)
             train_label.append(LABEL_DICT[label])
             
         texts = df['TEXT']
@@ -86,7 +87,8 @@ def get_text(year, label, train_data, train_label):
         context_count += len(text_list)
         for l in text_list:
             clean_text = re.sub(r"[^A-Za-z0-9\s]+", "", l)
-            train_data.append(clean_text.split(" "))
+            # train_data.append(clean_text.split(" "))
+            train_data.append(clean_text)
             train_label.append(LABEL_DICT[label])
 #         if pd.isna(df[i]['TITLE']) == False:
 #             train_data.append(df['TITLE'].split(" "))
@@ -138,7 +140,7 @@ def get_train_set():
 
 
 def main():
-#     get_json()
+    # get_json()
     train_data, train_label = get_train_set()
 #     print(len(train_data))
 #     print(train_data)
