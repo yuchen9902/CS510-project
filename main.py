@@ -23,6 +23,7 @@ def onefold_estimation(data_set, data_label, uni=True):
     if uni:
         predict_label = unigram(train_set, train_label, test_set)
     else:
+        print("here")
         predict_label = bigram(train_set, train_label, test_set)
     acc, fp, _, _, _ = compute_accuracies(predict_label, list(test_label))
     print("===== accuracy is %f =====" % acc)
@@ -77,4 +78,4 @@ def main(onefold=True, uni=True):
 
 
 if __name__ == "__main__":
-    main(False, False)
+    main(True, False)

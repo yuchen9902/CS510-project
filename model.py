@@ -78,9 +78,9 @@ def bigram(train_set, train_labels, dev_set, unigram_smoothing_parameter=0.035, 
 
         for j in range(len(train_set[i])):
             if train_labels[i] == 1:
-                dic_pos[train_set[i][j]] = dic_pos.get([train_set[i][j]], 0) + 1
+                dic_pos[train_set[i][j]] = dic_pos.get(train_set[i][j], 0) + 1
             else:
-                dic_neg[train_set[i][j]] = dic_neg.get([train_set[i][j]], 0) + 1
+                dic_neg[train_set[i][j]] = dic_neg.get(train_set[i][j], 0) + 1
 
     pos_V = len(dic_pos)
     neg_V = len(dic_neg)
