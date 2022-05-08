@@ -1,2 +1,4 @@
 /processed_data
 /training_t2
+/.idea
+**/__pycache__
