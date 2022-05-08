@@ -1,11 +1,11 @@
 import os
+from collections import OrderedDict
 
 from pymongo import MongoClient
 from flask.cli import load_dotenv
 
 import datetime
-import schema
-from bson.objectid import ObjectId
+from backend.database import schema
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -24,7 +24,7 @@ class Database:
     def __init__(self):
         try:
             self.client = MongoClient("mongodb+srv://" + SECRET_KEY + ":" + SECRET_PW +
-                                      "@cluster0.dfeu0.mongodb.net/"+DB_NAME+"?retryWrites=true&w=majority")
+                                      "@cluster0.dfeu0.mongodb.net/" + DB_NAME + "?retryWrites=true&w=majority")
 
             self.db = self.client.forum
             self.db_users = self.db.Users
@@ -32,7 +32,6 @@ class Database:
 
         except ConnectionAbortedError:
             print("[ERROR]: Connection Error")
-
 
     def reset_collections(self):
         """
@@ -72,6 +71,7 @@ class Database:
     def get_all_posts_by_username(self, data):
         return list(self.db_posts.find({'user_id': data}, projection={'_id': False}))
 
+
 if __name__ == "__main__":
     database = Database()
     # d = {"_id": "td2@illinois.edu",
@@ -104,9 +104,9 @@ if __name__ == "__main__":
     database.insert_post(data)
 
     reply = [{"user_id": "2",
-             "content": "reply",
-             "is_depressed": False,
-             "is_post": False,
-             "created_time": datetime.datetime.now(),
-             "to_which_post": "62772ec0a91bb48998360c43"}]
+              "content": "reply",
+              "is_depressed": False,
+              "is_post": False,
+              "created_time": datetime.datetime.now(),
+              "to_which_post": "62772ec0a91bb48998360c43"}]
     database.insert_post(reply)
