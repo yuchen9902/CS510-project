@@ -6,6 +6,7 @@ from flask.cli import load_dotenv
 import datetime
 import schema
 from bson.objectid import ObjectId
+from bson.json_util import dumps
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -72,6 +73,22 @@ class Database:
     def get_all_posts_by_username(self, data):
         return list(self.db_posts.find({'user_id': data}, projection={'_id': False}))
 
+    def get_all_posts(self):
+        # curr_db = connect_db()
+        cursor = self.db_posts.find()
+        list_cur = list(cursor)
+        output = {'all_post':list_cur}
+        json_data = dumps(output, indent=2)
+        print(json_data)
+        return json_data
+
+    def get_post_by_id(self, id):
+        # curr_db = connect_db()
+        cursor = self.db_posts.find({'_id':id})
+        list_cur = list(cursor)
+        json_data = dumps(list_cur, indent=2)
+        print(json_data)
+        return json_data
 if __name__ == "__main__":
     database = Database()
     # d = {"_id": "td2@illinois.edu",
@@ -94,19 +111,23 @@ if __name__ == "__main__":
     # print(res)
     # print(time)
 
-    data = [{"user_id": "1",
-             "content": "third post",
-             "is_depressed": True,
-             "is_post": True,
-             "title": "bbb",
-             "created_time": datetime.datetime.now()}]
+    # data = [{"user_id": "1",
+    #          "content": "third post",
+    #          "is_depressed": True,
+    #          "is_post": True,
+    #          "title": "bbb",
+    #          "created_time": datetime.datetime.now()}]
 
-    database.insert_post(data)
+    # database.insert_post(data)
 
-    reply = [{"user_id": "2",
-             "content": "reply",
-             "is_depressed": False,
-             "is_post": False,
-             "created_time": datetime.datetime.now(),
-             "to_which_post": "62772ec0a91bb48998360c43"}]
-    database.insert_post(reply)
+    # reply = [{"user_id": "2",
+    #          "content": "reply",
+    #          "is_depressed": False,
+    #          "is_post": False,
+    #          "created_time": datetime.datetime.now(),
+    #          "to_which_post": "62772ec0a91bb48998360c43"}]
+    # database.insert_post(reply)
+    # id = ObjectId('62772ec0a91bb48998360c43')
+    # database.get_post_by_id(id)
+    database.get_all_posts()
+
