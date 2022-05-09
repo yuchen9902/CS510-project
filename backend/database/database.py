@@ -1,6 +1,8 @@
+import json
 import os
 from collections import OrderedDict
 
+from bson import json_util
 from pymongo import MongoClient
 from flask.cli import load_dotenv
 
@@ -66,10 +68,29 @@ class Database:
 
     def insert_post(self, data, is_post=True):
         # curr_db = connect_db()
-        self.db[POST].insert_many(data)
+        try:
+            self.db[POST].insert_one(data)
+            msg = None
+        except Exception:
+            msg = "[WARNING]: Failed to insert"
+        return msg
 
     def get_all_posts_by_username(self, data):
         return list(self.db_posts.find({'user_id': data}, projection={'_id': False}))
+
+    def get_all_posts(self):
+        """
+        Out put all posts to json
+        TODO:Get rid of reply, add a boolean need_reply
+        """
+        cursor = self.db_posts.find()
+        list_cur = list(cursor)
+        return json.loads(json_util.dumps(list_cur))
+
+    def get_post_by_id(self, id):
+        cursor = self.db_posts.find({'_id': id}, projection={'_id': False})
+        list_cur = list(cursor)
+        return list_cur
 
 
 if __name__ == "__main__":
@@ -93,20 +114,20 @@ if __name__ == "__main__":
     # time = res[0]['created_time']
     # print(res)
     # print(time)
-
+    # print(datetime.datetime.now())
     data = [{"user_id": "1",
              "content": "third post",
              "is_depressed": True,
              "is_post": True,
              "title": "bbb",
-             "created_time": datetime.datetime.now()}]
-
+             "created_time": "a"}]
+    #
     database.insert_post(data)
 
-    reply = [{"user_id": "2",
-              "content": "reply",
-              "is_depressed": False,
-              "is_post": False,
-              "created_time": datetime.datetime.now(),
-              "to_which_post": "62772ec0a91bb48998360c43"}]
-    database.insert_post(reply)
+    # reply = [{"user_id": "2",
+    #           "content": "reply",
+    #           "is_depressed": False,
+    #           "is_post": False,
+    #           "created_time": datetime.datetime.now(),
+    #           "to_which_post": "62772ec0a91bb48998360c43"}]
+    # database.insert_post(reply)
