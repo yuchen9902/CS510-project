@@ -2,14 +2,13 @@ import json
 import os
 from collections import OrderedDict
 
-from bson import json_util
-
+from bson import ObjectId
 from pymongo import MongoClient
 from flask.cli import load_dotenv
 
 import datetime
-# from backend.database import schema
-from bson.objectid import ObjectId
+
+from backend.database import schema
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -29,6 +28,7 @@ class Database:
         try:
             self.client = MongoClient("mongodb+srv://" + SECRET_KEY + ":" + SECRET_PW +
                                       "@cluster0.dfeu0.mongodb.net/" + DB_NAME + "?retryWrites=true&w=majority")
+
             self.db = self.client.forum
             self.db_users = self.db.Users
             self.db_posts = self.db.Posts
@@ -68,35 +68,34 @@ class Database:
         return msg
 
     def insert_post(self, data, is_post=True):
+        # curr_db = connect_db()
         try:
-            self.db[POST].insert_one(data)
+            post_id = self.db[POST].insert_one(data).inserted_id
             msg = None
         except Exception:
             msg = "[WARNING]: Failed to insert"
-        return msg
+        return post_id, msg
 
     def get_all_posts_by_username(self, data):
         return list(self.db_posts.find({'user_id': data}, projection={'_id': False}))
 
-    def get_all_posts(self,need_reply = False):
+    def get_all_posts(self, need_reply=False):
         """
         Out put all posts to json
         TODO:Get rid of reply, add a boolean need_reply
         """
         if need_reply:
-            cursor = self.db_posts.find()
-            list_cur = list(cursor)
-            return json.loads(json_util.dumps(list_cur))
+            return list(self.db_posts.find())
         else:
-            cursor = self.db_posts.find({'is_post': True})
-            list_cur = list(cursor)
-            print(list_cur)
-            return json.loads(json_util.dumps(list_cur))
+            return list(self.db_posts.find({'is_post': True}))
 
     def get_post_by_id(self, id):
-        cursor = self.db_posts.find({'_id': id}, projection={'_id': False})
-        list_cur = list(cursor)
-        return list_cur
+        objectId = ObjectId(id)
+        return list(self.db_posts.find({'_id': objectId}, projection={'_id': False}))
+
+    def get_reply_by_post_id(self, id):
+        return list(self.db_posts.find({'to_which_post': id}, projection={'_id': False}))
+
 
 if __name__ == "__main__":
     database = Database()
@@ -112,38 +111,27 @@ if __name__ == "__main__":
     #      "title": "see",
     #      "created_time": "now"
     #     }
-    #
+    # print(database.get_post_by_id("6278507f357808838813b2db"))
     # print(user.post_user(d))
     # print(user.get_db_user_by_username("td2@illinois.edu"))
-    # res = user.get_all_posts_by_username("1")
+    # res = database.get_all_posts(True)
     # time = res[0]['created_time']
     # print(res)
     # print(time)
+    # print(datetime.datetime.now())
+    data = {"user_id": "我是小甜",
+            "content": "开心开心开心！",
+            "is_depressed": False,
+            "is_post": True,
+            "title": "我爱吃西兰花",
+            "created_time": datetime.datetime.now()}
+    #
+    database.insert_post(data)
 
-    # data = [{"user_id": "1",
-    #          "content": "third post",
-    #          "is_depressed": True,
-    #          "is_post": True,
-    #          "title": "bbb",
-    #          "created_time": datetime.datetime.now()}]
-    # #
-    # database.insert_post(data)
-
-    # reply = [{"user_id": "2",
-    #           "content": "reply",
-    #           "is_depressed": False,
-    #           "is_post": False,
-    #           "created_time": datetime.datetime.now(),
-    #           "to_which_post": "62772ec0a91bb48998360c43"}]
-    # database.insert_post(reply)
-
-    # database.insert_post(data)
-
-    # reply = [{"user_id": "2",
-    #          "content": "reply",
+    # reply = {"user_id": "天涯",
+    #          "content": "事实真的如此么，且不说公司完全可以为大牛搞个特例，就算回公司，真的有那么困难么？",
     #          "is_depressed": False,
     #          "is_post": False,
     #          "created_time": datetime.datetime.now(),
-    #          "to_which_post": "62772ec0a91bb48998360c43"}]
+    #          "to_which_post": "6278a5699388fca0394d3863"}
     # database.insert_post(reply)
-    database.get_all_posts(False)
