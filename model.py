@@ -1,5 +1,9 @@
 import math
-
+import numpy as np 
+import json
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn import metrics
 
 def unigram(train_set, train_labels, dev_set, smoothing_parameter=0.3, pos_prior=0.8):
     """
@@ -166,3 +170,20 @@ def bigram(train_set, train_labels, dev_set, unigram_smoothing_parameter=0.035, 
         else:
             res.append(0)
     return res
+    
+
+def multinomial(train_set, train_labels, test_set, change_type=False):
+    if change_type:
+        train_labels = train_labels.astype('int')
+    tf_idf = TfidfVectorizer()
+    #applying tf idf to training data
+    X_train_tf = tf_idf.fit_transform(train_set)
+    #applying tf idf to training data
+    X_train_tf = tf_idf.transform(train_set)
+    X_test_tf = tf_idf.transform(test_set)
+    naive_bayes_classifier = MultinomialNB()
+    naive_bayes_classifier.fit(X_train_tf, train_labels)
+    y_pred = naive_bayes_classifier.predict(X_test_tf)
+
+    return y_pred
+

@@ -3,11 +3,13 @@ import os
 from collections import OrderedDict
 
 from bson import json_util
+
 from pymongo import MongoClient
 from flask.cli import load_dotenv
 
 import datetime
 from backend.database import schema
+from bson.objectid import ObjectId
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -27,7 +29,6 @@ class Database:
         try:
             self.client = MongoClient("mongodb+srv://" + SECRET_KEY + ":" + SECRET_PW +
                                       "@cluster0.dfeu0.mongodb.net/" + DB_NAME + "?retryWrites=true&w=majority")
-
             self.db = self.client.forum
             self.db_users = self.db.Users
             self.db_posts = self.db.Posts
@@ -67,7 +68,6 @@ class Database:
         return msg
 
     def insert_post(self, data, is_post=True):
-        # curr_db = connect_db()
         try:
             self.db[POST].insert_one(data)
             msg = None
@@ -92,7 +92,6 @@ class Database:
         list_cur = list(cursor)
         return list_cur
 
-
 if __name__ == "__main__":
     database = Database()
     # d = {"_id": "td2@illinois.edu",
@@ -114,13 +113,13 @@ if __name__ == "__main__":
     # time = res[0]['created_time']
     # print(res)
     # print(time)
-    # print(datetime.datetime.now())
+
     data = [{"user_id": "1",
              "content": "third post",
              "is_depressed": True,
              "is_post": True,
              "title": "bbb",
-             "created_time": "a"}]
+             "created_time": datetime.datetime.now()}]
     #
     database.insert_post(data)
 
@@ -131,3 +130,13 @@ if __name__ == "__main__":
     #           "created_time": datetime.datetime.now(),
     #           "to_which_post": "62772ec0a91bb48998360c43"}]
     # database.insert_post(reply)
+
+    database.insert_post(data)
+
+    reply = [{"user_id": "2",
+             "content": "reply",
+             "is_depressed": False,
+             "is_post": False,
+             "created_time": datetime.datetime.now(),
+             "to_which_post": "62772ec0a91bb48998360c43"}]
+    database.insert_post(reply)
