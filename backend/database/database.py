@@ -8,7 +8,7 @@ from pymongo import MongoClient
 from flask.cli import load_dotenv
 
 import datetime
-from backend.database import schema
+# from backend.database import schema
 from bson.objectid import ObjectId
 
 load_dotenv()
@@ -78,14 +78,20 @@ class Database:
     def get_all_posts_by_username(self, data):
         return list(self.db_posts.find({'user_id': data}, projection={'_id': False}))
 
-    def get_all_posts(self):
+    def get_all_posts(self,need_reply = False):
         """
         Out put all posts to json
         TODO:Get rid of reply, add a boolean need_reply
         """
-        cursor = self.db_posts.find()
-        list_cur = list(cursor)
-        return json.loads(json_util.dumps(list_cur))
+        if need_reply:
+            cursor = self.db_posts.find()
+            list_cur = list(cursor)
+            return json.loads(json_util.dumps(list_cur))
+        else:
+            cursor = self.db_posts.find({'is_post': True})
+            list_cur = list(cursor)
+            print(list_cur)
+            return json.loads(json_util.dumps(list_cur))
 
     def get_post_by_id(self, id):
         cursor = self.db_posts.find({'_id': id}, projection={'_id': False})
@@ -114,14 +120,14 @@ if __name__ == "__main__":
     # print(res)
     # print(time)
 
-    data = [{"user_id": "1",
-             "content": "third post",
-             "is_depressed": True,
-             "is_post": True,
-             "title": "bbb",
-             "created_time": datetime.datetime.now()}]
-    #
-    database.insert_post(data)
+    # data = [{"user_id": "1",
+    #          "content": "third post",
+    #          "is_depressed": True,
+    #          "is_post": True,
+    #          "title": "bbb",
+    #          "created_time": datetime.datetime.now()}]
+    # #
+    # database.insert_post(data)
 
     # reply = [{"user_id": "2",
     #           "content": "reply",
@@ -131,12 +137,13 @@ if __name__ == "__main__":
     #           "to_which_post": "62772ec0a91bb48998360c43"}]
     # database.insert_post(reply)
 
-    database.insert_post(data)
+    # database.insert_post(data)
 
-    reply = [{"user_id": "2",
-             "content": "reply",
-             "is_depressed": False,
-             "is_post": False,
-             "created_time": datetime.datetime.now(),
-             "to_which_post": "62772ec0a91bb48998360c43"}]
-    database.insert_post(reply)
+    # reply = [{"user_id": "2",
+    #          "content": "reply",
+    #          "is_depressed": False,
+    #          "is_post": False,
+    #          "created_time": datetime.datetime.now(),
+    #          "to_which_post": "62772ec0a91bb48998360c43"}]
+    # database.insert_post(reply)
+    database.get_all_posts(False)
