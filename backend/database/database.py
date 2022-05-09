@@ -1,10 +1,14 @@
+import json
 import os
+from collections import OrderedDict
+
+from bson import json_util
 
 from pymongo import MongoClient
 from flask.cli import load_dotenv
 
 import datetime
-import schema
+from backend.database import schema
 from bson.objectid import ObjectId
 
 load_dotenv()
@@ -24,15 +28,13 @@ class Database:
     def __init__(self):
         try:
             self.client = MongoClient("mongodb+srv://" + SECRET_KEY + ":" + SECRET_PW +
-                                      "@cluster0.dfeu0.mongodb.net/"+DB_NAME+"?retryWrites=true&w=majority")
-
+                                      "@cluster0.dfeu0.mongodb.net/" + DB_NAME + "?retryWrites=true&w=majority")
             self.db = self.client.forum
             self.db_users = self.db.Users
             self.db_posts = self.db.Posts
 
         except ConnectionAbortedError:
             print("[ERROR]: Connection Error")
-
 
     def reset_collections(self):
         """
@@ -66,11 +68,29 @@ class Database:
         return msg
 
     def insert_post(self, data, is_post=True):
-        # curr_db = connect_db()
-        self.db[POST].insert_many(data)
+        try:
+            self.db[POST].insert_one(data)
+            msg = None
+        except Exception:
+            msg = "[WARNING]: Failed to insert"
+        return msg
 
     def get_all_posts_by_username(self, data):
         return list(self.db_posts.find({'user_id': data}, projection={'_id': False}))
+
+    def get_all_posts(self):
+        """
+        Out put all posts to json
+        TODO:Get rid of reply, add a boolean need_reply
+        """
+        cursor = self.db_posts.find()
+        list_cur = list(cursor)
+        return json.loads(json_util.dumps(list_cur))
+
+    def get_post_by_id(self, id):
+        cursor = self.db_posts.find({'_id': id}, projection={'_id': False})
+        list_cur = list(cursor)
+        return list_cur
 
 if __name__ == "__main__":
     database = Database()
@@ -100,6 +120,16 @@ if __name__ == "__main__":
              "is_post": True,
              "title": "bbb",
              "created_time": datetime.datetime.now()}]
+    #
+    database.insert_post(data)
+
+    # reply = [{"user_id": "2",
+    #           "content": "reply",
+    #           "is_depressed": False,
+    #           "is_post": False,
+    #           "created_time": datetime.datetime.now(),
+    #           "to_which_post": "62772ec0a91bb48998360c43"}]
+    # database.insert_post(reply)
 
     database.insert_post(data)
 

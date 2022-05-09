@@ -63,6 +63,8 @@ def get_text(year, label, train_data, train_label):
     
     context_count = 0
     for xml in dir_list:
+        if xml == ".DS_Store":
+            continue
         xml_path = curr_path+xml
         df = pd.read_xml(open(xml_path, "r").read())
         
@@ -127,9 +129,9 @@ def get_train_set():
     for i in range(2017, 2019):
         get_text(year=str(i), label="pos", train_data=train_data, train_label=train_label)
         get_text(year=str(i), label="neg", train_data=train_data, train_label=train_label)
-    with open('data.json', 'w') as f:
+    with open('processed_data/data.json', 'w') as f:
         json.dump(train_data, f, indent=4)
-    with open('label.json', 'w') as f:
+    with open('processed_data/label.json', 'w') as f:
         json.dump(train_label, f, indent=4)
     return train_data, train_label
 
