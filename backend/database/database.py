@@ -1,5 +1,6 @@
 import json
 import os
+from _md5 import md5
 from collections import OrderedDict
 
 from bson import ObjectId
@@ -54,7 +55,10 @@ class Database:
         """
         get user information by username
         """
-        return list(self.db_users.find({"_id": data}, projection={'_id': False}))
+        res = list(self.db_users.find({"_id": data}, projection={'_id': False}))
+        if len(res) == 0:
+            return None
+        return res[0]
 
     def post_user(self, data):
         """
@@ -62,7 +66,7 @@ class Database:
         """
         try:
             self.db_users.insert_one(data)
-            msg = None
+            msg = "You've successfully registered!! Please login"
         except Exception:
             msg = "[WARNING]: User has already registered, please log in"
         return msg
