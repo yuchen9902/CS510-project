@@ -2,6 +2,7 @@
 /training_t2
 .DS_Store
 **/.DS_Store
-.idea
+.idea/
 .env
 **/__pycache__
+venv

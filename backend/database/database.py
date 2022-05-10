@@ -62,7 +62,7 @@ class Database:
         """
         try:
             self.db_users.insert_one(data)
-            msg = None
+            msg = "You've successfully registered!!"
         except Exception:
             msg = "[WARNING]: User has already registered, please log in"
         return msg
@@ -73,25 +73,30 @@ class Database:
             msg = None
         except Exception:
             msg = "[WARNING]: Failed to insert"
+        # print(msg)
         return msg
 
     def get_all_posts_by_username(self, data):
         return list(self.db_posts.find({'user_id': data}, projection={'_id': False}))
 
-    def get_all_posts(self,need_reply = False):
+    def get_all_posts(self, need_reply=False):
         """
         Out put all posts to json
         TODO:Get rid of reply, add a boolean need_reply
         """
         if need_reply:
             cursor = self.db_posts.find()
-            list_cur = list(cursor)
-            return json.loads(json_util.dumps(list_cur))
         else:
             cursor = self.db_posts.find({'is_post': True})
-            list_cur = list(cursor)
-            print(list_cur)
-            return json.loads(json_util.dumps(list_cur))
+
+        list_cur = list(cursor)
+        for r in list_cur:
+            r['_id'] = str(r['_id'])
+            r['created_time'] = str(r['created_time'])[:19]
+
+        return list_cur
+
+
 
     def get_post_by_id(self, id):
         cursor = self.db_posts.find({'_id': id}, projection={'_id': False})
@@ -146,4 +151,4 @@ if __name__ == "__main__":
     #          "created_time": datetime.datetime.now(),
     #          "to_which_post": "62772ec0a91bb48998360c43"}]
     # database.insert_post(reply)
-    database.get_all_posts(False)
+    # database.get_all_posts(False)

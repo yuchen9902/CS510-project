@@ -1,0 +1,84 @@
+{% extends 'basic.html' %}
+{% block title %} post.title {% endblock %}
+
+{% block css %}
+{% endblock %}
+{% block body %}
+<br>
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    <strong>Message : </strong> {{ message }}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12 col-lg-offset-0">
+
+            <div class="row pad">
+                <div class="col-lg-12">
+                    <div class="panel panel-primary">
+                        <div class="card-body">
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    Username: <strong class="float-right">{{username}}</strong>
+                                </li>
+                                <li class="list-group-item">
+                                    Total posts: <strong class="float-right">{{post_count}}</strong>
+                                </li>
+                                <li class="list-group-item">
+                                    Potential depressed posts: <strong class="float-right">{{depression_count}}</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      {% for post in posts %}
+    <div class="container-fluid mt-10">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                  {% if post.is_depressed %}
+                    <div class="card-header bg-danger" >
+                  {% else %}
+                    <div class="card-header bg-success" >
+                  {% endif %}
+                    <div class="media flex-wrap w-100 align-items-center">
+                        <div class="media-body ml-3" style="text-transform: uppercase;">
+                            <a data-abc="true">【{{post.title}}】</a >
+                        </div>
+                        <div class="text-muted small ml-3">
+                            <div> Time Posted :</div>
+                            <div><strong>{{post.created_time}}</strong></div>
+                        </div>
+                    </div>
+                  </div>
+<!--                    <div class="card-header">-->
+<!--                        <div class="media flex-wrap w-100 align-items-center">-->
+<!--                            <div>-->
+<!--                              <div class="px-4 pt-3">title: {{post.title}} </div>-->
+<!--                            </div>-->
+<!--                            <div class="text-muted small ml-3">-->
+<!--                                <div> Time Posted :</div>-->
+<!--                                <div><strong>{{post.created_time}}</strong></div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+                    <div class="card-body">
+                        <p>{{post.content}}</p>
+                    </div>
+<!--                    <div class="card-footer d-flex flex-wrap justify-content-between align-items-center px-0 pt-0 pb-3">-->
+<!--                    </div>-->
+                </div>
+          </div>
+      </div>
+  </div>
+    {% endfor %}
+        </div>
+</div>
+</div>
+{% endblock %}
