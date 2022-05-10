@@ -79,10 +79,11 @@ a {
 <div class="jumbotron">
     <h1 class="display-4">Forum</h1>
     <p class="lead">Welcome to our forum. You can post your daily life by simply clicking on the add post button. <br> Thank you and Have a nice day!!</p >
-    <hr class="my-4">
     <p>You can also reply to others post by clicking on their post.</p >
+    <hr class="my-4">
       <button class="btn btn-primary btn-lg" data-target="#questions" data-toggle="modal" role="button">Add Post</button>
     </div>
+
     {% for post in posts %}
     <div class="container-fluid mt-10">
       <div class="row">
@@ -115,16 +116,18 @@ a {
 <div class="modal fade" id="questions" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
+          {% if current_user.is_authenticated %}
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel"> Create a new post </h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">&times</span>
           </button>
         </div>
+
         <div class="modal-body">
             <form action="/post" method="POST">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <div class="form-group">
-                  <input type="hidden" name="user_id" value="testUser">
                   <input type="hidden" name="is_post" value="1">
                   <input name="title" placeholder="title" style="margin-bottom: 3px;"/>
                     <br>
@@ -133,6 +136,14 @@ a {
                 <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
+        {% else %}
+          <div class="modal-header">
+              <h3>Please Login first to post a reply</h3>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times</span>
+              </button>
+          </div>
+        {% endif %}
       </div>
     </div>
 </div>
