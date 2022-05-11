@@ -18,8 +18,6 @@ def compute_accuracies(predicted_label, test_label):
 
 
 def onefold_estimation(data_set, data_label, uni=True, bi=False, multi=False):
-    data_set = data_set[:50000] + data_set[-50000:]
-    data_label = data_label[:50000] + data_label[-50000:]
     train_set, test_set, train_label, test_label = train_test_split(data_set, data_label,
                                                                     test_size=0.3, random_state=12345)
 
@@ -88,4 +86,4 @@ def main(onefold=True, uni=True, bi=True, multi=True):
 
 
 if __name__ == "__main__":
-    main(False, False, False, True)
+    main(True, False, False, True)
