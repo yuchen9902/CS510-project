@@ -1,16 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[11]:
-
-
 import pandas as pd
 import os
 import json
 import re
-
-
-# In[12]:
+import random
 
 
 PATH = "./training_t2/TRAINING_DATA/"
@@ -20,6 +12,8 @@ global pos_count
 global neg_count
 pos_count = 0
 neg_count = 0
+
+sample_dict = {'2017': 49692, '2018': 40744}
 
 
 # In[13]:
@@ -31,22 +25,22 @@ def xml_to_json(year, label, curr_dict):
     curr_path = PATH + year + "_cases/" + label + "/"
     dir_list = os.listdir(curr_path)
     subject_count += len(dir_list)
-    
+
     context_count = 0
     for xml in dir_list:
-        xml_path = curr_path+xml
+        xml_path = curr_path + xml
         df = pd.read_xml(open(xml_path, "r").read())
-        
+
         dropped = df.drop(DROP, axis=1)
         dropped.dropna(how="all", inplace=True)
         context_count += dropped.shape[0]
         result = dropped.to_json(orient="records")
         parsed = json.loads(result)
-        
+
         subject_idx = xml.split(".")[0]
-        subject_id = subject_idx+"_"+year
+        subject_id = subject_idx + "_" + year
         curr_dict[subject_id] = parsed
-    print("number of "+label+" subjects in "+year+":", subject_count)
+    print("number of " + label + " subjects in " + year + ":", subject_count)
     print("pieces of context:", context_count)
     print("===================================================")
 
@@ -55,54 +49,43 @@ def xml_to_json(year, label, curr_dict):
 
 
 # extract only title and text
-def get_text(year, label, train_data, train_label):
+def get_text(year, label):
     subject_count = 0
     curr_path = PATH + year + "_cases/" + label + "/"
     dir_list = os.listdir(curr_path)
     subject_count += len(dir_list)
-    
+
+    train_data = []
+    train_label = []
+
     context_count = 0
     for xml in dir_list:
         if xml == ".DS_Store":
             continue
-        xml_path = curr_path+xml
+        xml_path = curr_path + xml
         df = pd.read_xml(open(xml_path, "r").read())
-        
-        df.dropna(how="all", inplace=True)
-#         context_count += df.shape[0]
 
-        titles = df['TITLE']
-        titles.dropna(how="all", inplace=True)
-        title_list = titles.to_list()
+        df.dropna(how="all", inplace=True)
+
+        df['TITLE'] = df['TITLE'].fillna('')
+        df['TEXT'] = df['TEXT'].fillna('')
+
+        agg = df[['TITLE', 'TEXT']].agg(' '.join, axis=1)
+        title_list = agg.to_list()
         context_count += len(title_list)
         for l in title_list:
+            l = l.strip()
             clean_text = re.sub(r"[^A-Za-z0-9\s]+", "", l)
-            # train_data.append(clean_text.split(" "))
-            train_data.append(clean_text)
+            clean_text = clean_text.replace("\n", " ")
+            train_data.append(list(filter(None, clean_text.split())))
+            # train_data.append(clean_text)
             train_label.append(LABEL_DICT[label])
-            
-        texts = df['TEXT']
-        texts.dropna(how="all", inplace=True)
-        text_list = texts.to_list()
-        context_count += len(text_list)
-        for l in text_list:
-            clean_text = re.sub(r"[^A-Za-z0-9\s]+", "", l)
-            # train_data.append(clean_text.split(" "))
-            train_data.append(clean_text)
-            train_label.append(LABEL_DICT[label])
-#         if pd.isna(df[i]['TITLE']) == False:
-#             train_data.append(df['TITLE'].split(" "))
-#             train_label.append(LABEL_DICT[label])
-#         if pd.isna(df[i]['TEXT']) == False:
-#             train_data.append(df['TEXT'].split(" "))
-#             train_label.append(LABEL_DICT[label])
-        
-    print("number of "+label+" subjects in "+year+":", subject_count)
-    print("pieces of context:", context_count)
+
+    print("equal? ", len(train_data) == len(train_label))
+    print("number of " + label + " subjects in " + year + ":", subject_count)
+    print("pieces of content:", context_count)
     print("===================================================")
-
-
-# In[27]:
+    return train_data, train_label
 
 
 def get_json():
@@ -111,37 +94,48 @@ def get_json():
     for i in range(2017, 2019):
         xml_to_json(year=str(i), label="pos", curr_dict=pos)
         xml_to_json(year=str(i), label="neg", curr_dict=neg)
-    
+
     with open('pos.json', 'w') as f:
         json.dump(pos, f, indent=4)
-        
+
     with open('neg.json', 'w') as f:
         json.dump(neg, f, indent=4)
 
 
 # In[43]:
+def sample_data(year, train_data, train_label):
+    random_indices = random.sample(range(0, len(train_data)), sample_dict[year])
+    data = [train_data[i] for i in random_indices]
+    label = [train_label[i] for i in random_indices]
+    return data, label
 
 
 def get_train_set():
     train_data = []
     train_label = []
-#     get_text(year="2017", label="pos", train_data=train_data, train_label=train_label)
     for i in range(2017, 2019):
-        get_text(year=str(i), label="pos", train_data=train_data, train_label=train_label)
-        get_text(year=str(i), label="neg", train_data=train_data, train_label=train_label)
-    with open('processed_data/data.json', 'w') as f:
+        for k in ['pos', 'neg']:
+            data, label = get_text(year=str(i), label=k)
+            sampled_data, sampled_label = sample_data(str(i), data, label)
+            train_data += sampled_data
+            train_label += sampled_label
+            print("#######################")
+            print("year: ", i, "label: ", k)
+            print("count: ", len(sampled_data))
+            print("#######################")
+
+    with open('processed_data/split_data.json', 'w') as f:
         json.dump(train_data, f, indent=4)
-    with open('processed_data/label.json', 'w') as f:
+    with open('processed_data/split_label.json', 'w') as f:
         json.dump(train_label, f, indent=4)
     return train_data, train_label
-
-
-# In[44]:
 
 
 def main():
     # get_json()
     train_data, train_label = get_train_set()
+
+
 #     print(len(train_data))
 #     print(train_data)
 #     print("================")
@@ -149,15 +143,5 @@ def main():
 #     print(train_label)
 
 
-# In[46]:
-
-
 if __name__ == "__main__":
     main()
-
-
-# In[ ]:
-
-
-
-

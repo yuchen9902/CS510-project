@@ -39,7 +39,6 @@ body {
     padding-bottom: 0;
     padding-right: .625rem;
     height: 3.5rem;
-    text-transform: uppercase;
     background-color: #fff;
     border-bottom: 1px solid rgba(26, 54, 126, 0.125)
 }
@@ -70,6 +69,28 @@ body {
 a {
     text-decoration: none !important;
     background-color: transparent
+}
+
+input[type="text"],
+input[type="password"] {
+  display: block;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  padding: 4px;
+  width: 100%;
+  height: 32px;
+  border: none;
+  border-bottom: 1px solid #AAA;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  transition: 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-bottom: 2px solid #16a085;
+  transition: 0.2s ease;
 }
 
 {% endblock %}
@@ -110,7 +131,7 @@ a {
   </div>
   {% endfor %}
 
-</div> -->
+</div>
 
 <!-- Modal -->
 <div class="modal fade" id="questions" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -129,9 +150,9 @@ a {
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 <div class="form-group">
                   <input type="hidden" name="is_post" value="1">
-                  <input name="title" placeholder="title" style="margin-bottom: 3px;"/>
+                  <input type="text" name="title" placeholder="Type your title here" style="margin-bottom: 3px;"/>
                     <br>
-                  <textarea class="form-control" id="content" name="content" rows="3" placeholder=""></textarea>
+                  <textarea class="form-control" id="content" name="content" rows="3" placeholder="Type your post here..."></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
             </form>
