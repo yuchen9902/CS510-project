@@ -78,6 +78,7 @@ def post_api():
     """
     if request.method == 'GET':
         query = get_query("_id")
+        msg = get_query("msg")
         result = db.get_post_by_id(query)[0]
         result['created_time'] = str(result['created_time'])[:19]
         print(result)
@@ -85,7 +86,7 @@ def post_api():
         for r in replies:
             r['created_time'] = str(r['created_time'])[:19]
         print(replies)
-        return render_template("post.html", postId=query, post=result, replies=replies)
+        return render_template("post.html", postId=query, post=result, replies=replies, msg=msg)
 
     elif request.method == 'POST':
         new_data = request.form.to_dict()
@@ -104,19 +105,20 @@ def post_api():
 
         if pred[0] == 1:
             new_data['is_depressed'] = True
+            msg = "Need help? You could speak with someone: 800-950-6264 (National Alliance on Mental Illness Helpline)"
         else:
             new_data['is_depressed'] = False
+            msg = None
         print(new_data)
 
         # db interaction
-        post_id, msg = db.insert_post(new_data)
+        post_id, _ = db.insert_post(new_data)
         user_info = db.get_db_user_by_username(current_user.id)
         user_info['_id'] = current_user.id
         user_info['depression_count'] += 1 if pred[0] == 1 else 0
         user_info['post_count'] += 1
         db.update_user_info(user_info)
 
-        print(msg)
         if new_data['is_post'] == 1:
             query = post_id
         else:
@@ -131,7 +133,7 @@ def post_api():
             r['created_time'] = str(r['created_time'])[:19]
         print(replies)
 
-        return redirect(url_for('post_api', code=303, _id=query))
+        return redirect(url_for('post_api', code=303, _id=query, msg=msg))
 
     else:
         return 400
@@ -205,5 +207,7 @@ if __name__ == "__main__":
     app.run()
     # read model from file
     # content = ["What's the game plan? It was a nice run, Kev; had to close out some day. Nobody wins them all."]
+    # content = ["But the Fantastic Mr. Fox says dogs like blueberries. Or is that only beagles?"]
+    # content = ["dogs like blueberries"]
     # res = model.predict(content)
     # print(res)
