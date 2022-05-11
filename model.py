@@ -76,6 +76,21 @@ def bigram(train_set, train_labels, dev_set, unigram_smoothing_parameter=0.035, 
     stopwords = nltk.corpus.stopwords.words('english')
     lemmatizer = WordNetLemmatizer()
 
+    # train_X = []
+    # test_X = []
+    #
+    # # text pre processing
+    # for i in range(0, len(train_set)):
+    #     review = [lemmatizer.lemmatize(word) for word in train_set[i] if not word in set(stopwords)]
+    #     train_X.append(review)
+    #
+    # for i in range(0, len(dev_set)):
+    #     review = [lemmatizer.lemmatize(word) for word in dev_set[i] if not word in set(stopwords)]
+    #     test_X.append(review)
+    #
+    # train_set = train_X
+    # dev_set = test_X
+
     # unigram
     dic_pos = {}
     dic_neg = {}
@@ -203,7 +218,6 @@ def multinomial(train_set, train_labels, test_set, change_type=False):
         test_X.append(review)
 
     print("after proprocessing")
-
     if change_type:
         train_labels = train_labels.astype('int')
     tf_idf = TfidfVectorizer()

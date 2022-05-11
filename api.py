@@ -90,12 +90,14 @@ def post_api():
     elif request.method == 'POST':
         new_data = request.form.to_dict()
         new_data['created_time'] = datetime.datetime.now()
-        # new_data['is_depressed'] = model.predict([])
         new_data['is_post'] = bool(int(new_data['is_post']))
         new_data['user_id'] = current_user.id
 
         # Here will run the ML model on the post
-        text = new_data['content'] + new_data['title']
+        if 'title' in new_data:
+            text = new_data['content'] + new_data['title']
+        else:
+            text = new_data['content']
         pred = model.predict([text])
         print("content to be predict: ", text)
         print("predict result: ", pred)
@@ -144,7 +146,6 @@ def profile():
     print(posts)
 
     user_info = db.get_db_user_by_username(username)
-    print(user_info)
     return render_template('profile.html', username=username,
                            posts=posts, post_count=user_info["post_count"],
                            depression_count=user_info["depression_count"])
@@ -159,9 +160,7 @@ def user_api():
     if request.method == 'GET':
         return render_template('register.html', message="")
     elif request.method == 'POST':
-        print("else")
         new_data = request.form
-        print("new_data")
         print(new_data)
         user = {
             "_id": request.form.get('username'),
@@ -170,7 +169,6 @@ def user_api():
             "depression_count": 0
         }
         msg = db.post_user(user)
-        print(msg)
         return redirect(url_for('login', msg=msg))
 
 
@@ -187,7 +185,6 @@ def login():
         username = request.form.get('username', None)
         password = request.form.get('password', None)
         user = db.get_db_user_by_username(username)
-        print(user)
         if user:
             if md5(password.encode('utf-8')).hexdigest() == md5(user['password'].encode('utf-8')).hexdigest():
                 login_user(User(username))
