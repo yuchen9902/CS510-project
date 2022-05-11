@@ -79,13 +79,14 @@ def post_api():
     if request.method == 'GET':
         query = get_query("_id")
         msg = get_query("msg")
+        if type(query) == dict:
+            return render_template('error.html')
+
         result = db.get_post_by_id(query)[0]
         result['created_time'] = str(result['created_time'])[:19]
-        print(result)
         replies = db.get_reply_by_post_id(query)
         for r in replies:
             r['created_time'] = str(r['created_time'])[:19]
-        print(replies)
         return render_template("post.html", postId=query, post=result, replies=replies, msg=msg)
 
     elif request.method == 'POST':
@@ -94,7 +95,7 @@ def post_api():
         new_data['is_post'] = bool(int(new_data['is_post']))
         new_data['user_id'] = current_user.id
 
-        # Here will run the ML model on the post
+        # un the ML model on the post
         if 'title' in new_data:
             text = new_data['content'] + new_data['title']
         else:
@@ -109,7 +110,6 @@ def post_api():
         else:
             new_data['is_depressed'] = False
             msg = None
-        print(new_data)
 
         # db interaction
         post_id, _ = db.insert_post(new_data)
@@ -124,14 +124,14 @@ def post_api():
         else:
             query = new_data['to_which_post']
 
+        # get post
         result = db.get_post_by_id(query)[0]
         result['created_time'] = str(result['created_time'])[:19]
-        print(result)
 
+        # get replies
         replies = db.get_reply_by_post_id(query)
         for r in replies:
             r['created_time'] = str(r['created_time'])[:19]
-        print(replies)
 
         return redirect(url_for('post_api', code=303, _id=query, msg=msg))
 
@@ -141,16 +141,18 @@ def post_api():
 
 @app.route('/profile')
 def profile():
-    username = current_user.id
-    posts = db.get_all_posts_by_username(username)
-    for r in posts:
-        r['created_time'] = str(r['created_time'])[:19]
-    print(posts)
+    try:
+        username = current_user.id
+        posts = db.get_all_posts_by_username(username)
+        for r in posts:
+            r['created_time'] = str(r['created_time'])[:19]
 
-    user_info = db.get_db_user_by_username(username)
-    return render_template('profile.html', username=username,
-                           posts=posts, post_count=user_info["post_count"],
-                           depression_count=user_info["depression_count"])
+        user_info = db.get_db_user_by_username(username)
+        return render_template('profile.html', username=username,
+                               posts=posts, post_count=user_info["post_count"],
+                               depression_count=user_info["depression_count"])
+    except Exception:
+        return redirect(url_for('login'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
