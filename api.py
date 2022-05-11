@@ -1,10 +1,10 @@
 import datetime
 import os
-import random
+import pickle
 from hashlib import md5
+from flask import Flask, request, render_template, redirect, url_for
 
-from flask import Flask, request, abort, render_template, redirect, url_for, session
-from backend.database.database import Database
+from database.database import Database
 from flask_login import LoginManager, login_user, login_required, UserMixin, current_user, logout_user
 
 app = Flask(__name__)
@@ -24,17 +24,25 @@ def load_user(user_id):
     return User(user_id)
 
 
-class Test:
-    def predict(self):
-        return bool(random.randint(0, 1))
-
-
 class User(UserMixin):
     def __init__(self, username):
         self.id = username
 
 
-model = Test()
+class ML:
+    def __init__(self):
+        filename = 'finalized_model.sav'
+        self.loaded_model = pickle.load(open(filename, 'rb'))
+        file_tfidf = 'tfidf_vectorizer.sav'
+        self.tfidf_vectorizer = pickle.load(open(file_tfidf, 'rb'))
+
+    def predict(self, X_test):
+        X_test = self.tfidf_vectorizer.transform(X_test)
+        result = self.loaded_model.predict(X_test)
+        return result
+
+
+model = ML()
 
 
 def get_query(key):
@@ -82,12 +90,30 @@ def post_api():
     elif request.method == 'POST':
         new_data = request.form.to_dict()
         new_data['created_time'] = datetime.datetime.now()
-        new_data['is_depressed'] = model.predict()
+        # new_data['is_depressed'] = model.predict([])
         new_data['is_post'] = bool(int(new_data['is_post']))
         new_data['user_id'] = current_user.id
+
+        # Here will run the ML model on the post
+        text = new_data['content'] + new_data['title']
+        pred = model.predict([text])
+        print("content to be predict: ", text)
+        print("predict result: ", pred)
+
+        if pred[0] == 1:
+            new_data['is_depressed'] = True
+        else:
+            new_data['is_depressed'] = False
         print(new_data)
 
+        # db interaction
         post_id, msg = db.insert_post(new_data)
+        user_info = db.get_db_user_by_username(current_user.id)
+        user_info['_id'] = current_user.id
+        user_info['depression_count'] += 1 if pred[0] == 1 else 0
+        user_info['post_count'] += 1
+        db.update_user_info(user_info)
+
         print(msg)
         if new_data['is_post'] == 1:
             query = post_id
@@ -148,7 +174,7 @@ def user_api():
         return redirect(url_for('login', msg=msg))
 
 
-@app.route('/login', methods=['GET', 'POST'])    # POST
+@app.route('/login', methods=['GET', 'POST'])  # POST
 def login():
     query = get_query("msg")
     msg = None
@@ -166,7 +192,7 @@ def login():
             if md5(password.encode('utf-8')).hexdigest() == md5(user['password'].encode('utf-8')).hexdigest():
                 login_user(User(username))
                 return redirect(url_for('profile'))
-        return redirect(url_for('login'))
+        return redirect(url_for('login', msg="You haven't been registered. Please register first!"))
     else:
         return 400
 
@@ -181,4 +207,6 @@ def logout():
 if __name__ == "__main__":
     app.run()
     # read model from file
-
+    # content = ["What's the game plan? It was a nice run, Kev; had to close out some day. Nobody wins them all."]
+    # res = model.predict(content)
+    # print(res)
