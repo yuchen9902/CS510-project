@@ -49,7 +49,11 @@
                   {% endif %}
                     <div class="media flex-wrap w-100 align-items-center">
                         <div class="media-body ml-3">
+                            {% if post.title %}
                             <a data-abc="true">【{{post.title}}】</a >
+                            {% else %}
+                            <a data-abc="true">【THIS IS A REPLY】</a >
+                            {% endif %}
                         </div>
                         <div class="text-muted small ml-3">
                             <div> Time Posted :</div>
