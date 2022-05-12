@@ -1,9 +1,12 @@
 import math
-import numpy as np 
-import json
+import pickle
+import re
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn import metrics
+import nltk
+from nltk.stem import WordNetLemmatizer
+
 
 def unigram(train_set, train_labels, dev_set, smoothing_parameter=0.3, pos_prior=0.8):
     """
@@ -65,9 +68,26 @@ def bigram(train_set, train_labels, dev_set, unigram_smoothing_parameter=0.035, 
            bigram_lambda=0.08, pos_prior=0.8):
     """
     train_set -  [['like','this','movie'], ['i','fall','asleep']]
-
     train_labels - List of labels corresponding with train_set
     """
+    stopwords = nltk.corpus.stopwords.words('english')
+    lemmatizer = WordNetLemmatizer()
+
+    # train_X = []
+    # test_X = []
+    #
+    # # text pre processing
+    # for i in range(0, len(train_set)):
+    #     review = [lemmatizer.lemmatize(word) for word in train_set[i] if not word in set(stopwords)]
+    #     train_X.append(review)
+    #
+    # for i in range(0, len(dev_set)):
+    #     review = [lemmatizer.lemmatize(word) for word in dev_set[i] if not word in set(stopwords)]
+    #     test_X.append(review)
+    #
+    # train_set = train_X
+    # dev_set = test_X
+
     # unigram
     dic_pos = {}
     dic_neg = {}
@@ -134,14 +154,14 @@ def bigram(train_set, train_labels, dev_set, unigram_smoothing_parameter=0.035, 
         for word in l:
             if word in dic_pos:
                 t = (dic_pos[word] + unigram_smoothing_parameter) / (
-                            positive_count + unigram_smoothing_parameter * (pos_V + 1))
+                        positive_count + unigram_smoothing_parameter * (pos_V + 1))
                 pos_total += math.log(t)
             else:
                 pos_total += punk_pos
 
             if word in dic_neg:
                 t = (dic_neg[word] + unigram_smoothing_parameter) / (
-                            negative_count + unigram_smoothing_parameter * (neg_V + 1))
+                        negative_count + unigram_smoothing_parameter * (neg_V + 1))
                 neg_total += math.log(t)
             else:
                 neg_total += punk_neg
@@ -150,14 +170,14 @@ def bigram(train_set, train_labels, dev_set, unigram_smoothing_parameter=0.035, 
             st = l[i] + l[i + 1]
             if st in dic_pos_bi:
                 t = (dic_pos_bi[st] + bigram_smoothing_parameter) / (
-                            positive_count_bi + bigram_smoothing_parameter * (pos_V_bi + 1))
+                        positive_count_bi + bigram_smoothing_parameter * (pos_V_bi + 1))
                 pos_total_bi += math.log(t)
             else:
                 pos_total_bi += punk_pos_bi
 
             if st in dic_neg_bi:
                 t = (dic_neg_bi[st] + bigram_smoothing_parameter) / (
-                            negative_count_bi + bigram_smoothing_parameter * (neg_V_bi + 1))
+                        negative_count_bi + bigram_smoothing_parameter * (neg_V_bi + 1))
                 neg_total_bi += math.log(t)
             else:
                 neg_total_bi += punk_neg_bi
@@ -170,20 +190,48 @@ def bigram(train_set, train_labels, dev_set, unigram_smoothing_parameter=0.035, 
         else:
             res.append(0)
     return res
-    
+
 
 def multinomial(train_set, train_labels, test_set, change_type=False):
+    stopwords = nltk.corpus.stopwords.words('english')
+    lemmatizer = WordNetLemmatizer()
+
+    train_X = []
+    test_X = []
+
+    # text pre processing
+    for i in range(0, len(train_set)):
+        review = [lemmatizer.lemmatize(word) for word in train_set[i] if word not in set(stopwords)]
+        review = ' '.join(review)
+        review = re.sub('[^a-zA-Z]', ' ', review)
+        review = review.lower()
+        train_X.append(review)
+
+    for i in range(0, len(test_set)):
+        review = [lemmatizer.lemmatize(word) for word in test_set[i] if word not in set(stopwords)]
+        review = ' '.join(review)
+        review = re.sub('[^a-zA-Z]', ' ', review)
+        review = review.lower()
+        test_X.append(review)
+
+    print("after proprocessing")
     if change_type:
         train_labels = train_labels.astype('int')
     tf_idf = TfidfVectorizer()
-    #applying tf idf to training data
-    X_train_tf = tf_idf.fit_transform(train_set)
-    #applying tf idf to training data
-    X_train_tf = tf_idf.transform(train_set)
-    X_test_tf = tf_idf.transform(test_set)
+    # applying tf idf to training data
+    X_train_tf = tf_idf.fit_transform(train_X)
+    # applying tf idf to training data
+    X_train_tf = tf_idf.transform(train_X)
+    X_test_tf = tf_idf.transform(test_X)
+
     naive_bayes_classifier = MultinomialNB()
     naive_bayes_classifier.fit(X_train_tf, train_labels)
     y_pred = naive_bayes_classifier.predict(X_test_tf)
 
-    return y_pred
+    # Save Model Using Pickle
+    filename = 'tfidf_vectorizer.sav'
+    pickle.dump(tf_idf, open(filename, "wb"))
+    filename = 'finalized_model.sav'
+    pickle.dump(naive_bayes_classifier, open(filename, 'wb'))
 
+    return y_pred

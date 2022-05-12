@@ -1,5 +1,6 @@
 import json
 import os
+from _md5 import md5
 from collections import OrderedDict
 
 from bson import ObjectId
@@ -8,7 +9,7 @@ from flask.cli import load_dotenv
 
 import datetime
 
-from backend.database import schema
+from database import schema
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -54,7 +55,10 @@ class Database:
         """
         get user information by username
         """
-        return list(self.db_users.find({"_id": data}, projection={'_id': False}))
+        res = list(self.db_users.find({"_id": data}, projection={'_id': False}))
+        if len(res) == 0:
+            return None
+        return res[0]
 
     def post_user(self, data):
         """
@@ -62,7 +66,7 @@ class Database:
         """
         try:
             self.db_users.insert_one(data)
-            msg = None
+            msg = "You've successfully registered!! Please login"
         except Exception:
             msg = "[WARNING]: User has already registered, please log in"
         return msg
@@ -73,6 +77,7 @@ class Database:
             post_id = self.db[POST].insert_one(data).inserted_id
             msg = None
         except Exception:
+            post_id = None
             msg = "[WARNING]: Failed to insert"
         return post_id, msg
 
@@ -95,6 +100,11 @@ class Database:
 
     def get_reply_by_post_id(self, id):
         return list(self.db_posts.find({'to_which_post': id}, projection={'_id': False}))
+
+    def update_user_info(self, user_info):
+        self.db_users.update_one({'_id': user_info['_id']},
+                                 {'$set': {'post_count': user_info['post_count'],
+                                           'depression_count': user_info['depression_count']}})
 
 
 if __name__ == "__main__":

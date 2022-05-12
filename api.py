@@ -1,11 +1,52 @@
 import datetime
-from flask import Flask, request, abort, render_template, redirect, url_for
-from backend.database.database import Database
+import os
+import pickle
+import re
+from hashlib import md5
+from flask import Flask, request, render_template, redirect, url_for
+import nltk
+from nltk.stem import WordNetLemmatizer
+
+from database.database import Database
+from flask_login import LoginManager, login_user, login_required, UserMixin, current_user, logout_user
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
-
 db = Database()
+
+# use login manager to manage session
+app.secret_key = os.urandom(24)
+login_manager = LoginManager()
+login_manager.session_protection = 'strong'
+login_manager.login_view = 'login'
+login_manager.init_app(app=app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
+
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+
+class ML:
+    def __init__(self):
+        filename = 'finalized_model.sav'
+        self.loaded_model = pickle.load(open(filename, 'rb'))
+        file_tfidf = 'tfidf_vectorizer.sav'
+        self.tfidf_vectorizer = pickle.load(open(file_tfidf, 'rb'))
+
+    def predict(self, X_test):
+        X_test = [preprocess_data(X_test[0])]
+        X_test = self.tfidf_vectorizer.transform(X_test)
+        result = self.loaded_model.predict(X_test)
+        return result
+
+
+model = ML()
 
 
 def get_query(key):
@@ -19,31 +60,6 @@ def get_query(key):
         if params == key:
             query = val[params]
     return query
-
-
-@app.route('/user', methods=['GET', 'POST'])
-# @login_required
-def user_api():
-    """
-    get/put users
-    @return: json data
-    """
-    if request.method == 'GET':
-        query = get_query("username")
-        result = db.get_db_user_by_username(query)
-        return render_template("login.html")
-
-    elif request.method == 'POST':
-        if not request.content_type.startswith('application/json'):
-            abort(415, 'please sent data in json format')
-        new_data = request.json
-        msg = db.post_user(new_data)
-        if msg:
-            return {'data': [], 'msg': msg}, 422
-        return {'data': [], 'msg': msg}, 201
-
-    else:
-        return 400
 
 
 @app.route('/posts')
@@ -66,56 +82,148 @@ def post_api():
     """
     if request.method == 'GET':
         query = get_query("_id")
+        msg = get_query("msg")
+        if type(query) == dict:
+            return render_template('error.html')
+
         result = db.get_post_by_id(query)[0]
         result['created_time'] = str(result['created_time'])[:19]
-        print(result)
         replies = db.get_reply_by_post_id(query)
         for r in replies:
             r['created_time'] = str(r['created_time'])[:19]
-        print(replies)
-        return render_template("post.html", postId=query, post=result, replies=replies)
+        return render_template("post.html", postId=query, post=result, replies=replies, msg=msg)
 
     elif request.method == 'POST':
         new_data = request.form.to_dict()
         new_data['created_time'] = datetime.datetime.now()
-        new_data['is_depressed'] = False
         new_data['is_post'] = bool(int(new_data['is_post']))
-        print(new_data)
-        post_id, msg = db.insert_post(new_data)
-        print(msg)
+        new_data['user_id'] = current_user.id
+
+        # un the ML model on the post
+        if 'title' in new_data:
+            text = new_data['content'] + " " + new_data['title']
+        else:
+            text = new_data['content']
+
+        pred = model.predict([text])
+        print("content to be predict: ", text)
+        print("predict result: ", pred)
+
+        if pred[0] == 1:
+            new_data['is_depressed'] = True
+            msg = "Need help? You could speak with someone: 800-950-6264 (National Alliance on Mental Illness Helpline)"
+        else:
+            new_data['is_depressed'] = False
+            msg = None
+
+        # db interaction
+        post_id, _ = db.insert_post(new_data)
+        user_info = db.get_db_user_by_username(current_user.id)
+        user_info['_id'] = current_user.id
+        user_info['depression_count'] += 1 if pred[0] == 1 else 0
+        user_info['post_count'] += 1
+        db.update_user_info(user_info)
+
         if new_data['is_post'] == 1:
             query = post_id
         else:
             query = new_data['to_which_post']
 
+        # get post
         result = db.get_post_by_id(query)[0]
         result['created_time'] = str(result['created_time'])[:19]
-        print(result)
 
+        # get replies
         replies = db.get_reply_by_post_id(query)
         for r in replies:
             r['created_time'] = str(r['created_time'])[:19]
-        print(replies)
 
-        return redirect(url_for('post_api', code=303, _id=query))
+        return redirect(url_for('post_api', code=303, _id=query, msg=msg))
 
     else:
         return 400
 
 
-@app.route('/profile/<username>')
-def profile(username):
-    posts = db.get_all_posts_by_username(username)
-    for r in posts:
-        r['created_time'] = str(r['created_time'])[:19]
-    print(posts)
-    print(username)
-    user_info = db.get_db_user_by_username(username)[0]
-    print(user_info)
-    return render_template('profile.html', username=username,
-                           posts=posts, post_count=user_info["post_count"],
-                           depression_count=user_info["depression_count"])
+def preprocess_data(text):
+    stopwords = nltk.corpus.stopwords.words('english')
+    lemmatizer = WordNetLemmatizer()
+    text = text.strip()
+    text = re.sub(r"[^A-Za-z0-9\s]+", "", text)
+    text = text.replace("\n", " ").lower()
+    text = list(filter(None, text.split()))
+    text = [lemmatizer.lemmatize(word) for word in text if word not in set(stopwords)]
+    text = " ".join(text)
+    return text
+
+
+@app.route('/profile')
+def profile():
+    try:
+        username = current_user.id
+        posts = db.get_all_posts_by_username(username)
+        for r in posts:
+            r['created_time'] = str(r['created_time'])[:19]
+
+        user_info = db.get_db_user_by_username(username)
+        return render_template('profile.html', username=username,
+                               posts=posts, post_count=user_info["post_count"],
+                               depression_count=user_info["depression_count"])
+    except Exception:
+        return redirect(url_for('login'))
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def user_api():
+    """
+    get/put users
+    @return: json data
+    """
+    if request.method == 'GET':
+        return render_template('register.html', message="")
+    elif request.method == 'POST':
+        new_data = request.form
+        print(new_data)
+        user = {
+            "_id": request.form.get('username'),
+            "password": request.form.get('password'),
+            "post_count": 0,
+            "depression_count": 0
+        }
+        msg = db.post_user(user)
+        return redirect(url_for('login', msg=msg))
+
+
+@app.route('/login', methods=['GET', 'POST'])  # POST
+def login():
+    query = get_query("msg")
+    msg = None
+    if type(query) is str:
+        msg = query
+
+    if request.method == 'GET':
+        return render_template('login.html', message=msg)
+    elif request.method == 'POST':
+        username = request.form.get('username', None)
+        password = request.form.get('password', None)
+        user = db.get_db_user_by_username(username)
+        if user:
+            if md5(password.encode('utf-8')).hexdigest() == md5(user['password'].encode('utf-8')).hexdigest():
+                login_user(User(username))
+                return redirect(url_for('profile'))
+        return redirect(url_for('login', msg="You haven't been registered. Please register first!"))
+    else:
+        return 400
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 
 if __name__ == "__main__":
     app.run()
+    # content = ["What's the game plan? It was a nice run, Kev; had to close out some day. Nobody wins them all."]
+    # res = model.predict(content)
+    # print(res)

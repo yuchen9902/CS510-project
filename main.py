@@ -1,10 +1,9 @@
-from model import unigram, bigram,multinomial
-import tfidf
+from model import unigram, bigram, multinomial
 import json
 import numpy as np
+from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import KFold, train_test_split
-
 
 
 def compute_accuracies(predicted_label, test_label):
@@ -21,17 +20,15 @@ def compute_accuracies(predicted_label, test_label):
 def onefold_estimation(data_set, data_label, uni=True, bi=False, multi=False):
     train_set, test_set, train_label, test_label = train_test_split(data_set, data_label,
                                                                     test_size=0.3, random_state=12345)
+
     # predict label and calculate the accuracy
     if uni:
-        # predict_label = tfidf.compute_tfidf(train_set, train_label, test_set)
         predict_label = unigram(train_set, train_label, test_set)
     elif bi:
         predict_label = bigram(train_set, train_label, test_set)
     elif multi:
-        predict_label = multinomial(train_set, train_label, test_set, change_type = False)
-    acc, fp, _, _, _ = compute_accuracies(predict_label, list(test_label))
-    print("===== accuracy is %f =====" % acc)
-    print("===== false_positive is %d ===== " % fp)
+        predict_label = multinomial(train_set, train_label, test_set, change_type=False)
+    print(classification_report(list(test_label), predict_label))
     return 0
 
 
@@ -47,12 +44,11 @@ def nfold_estimation(data_set, data_label, uni=True, bi=False, multi=False):
 
         # predict label and calculate the accuracy
         if uni:
-            # predict_label = tfidf.compute_tfidf(train_set, train_label, test_set)
             predict_label = unigram(train_set, train_label, test_set)
         elif bi:
             predict_label = bigram(train_set, train_label, test_set)
         elif multi:
-            predict_label = multinomial(train_set, train_label, test_set, change_type = True)
+            predict_label = multinomial(train_set, train_label, test_set, change_type=True)
         acc, _, _, _, _ = compute_accuracies(predict_label, list(test_label))
         print(acc)
         acc_list.append(acc)
@@ -61,7 +57,7 @@ def nfold_estimation(data_set, data_label, uni=True, bi=False, multi=False):
     return acc
 
 
-def main(onefold=True, uni=True,bi=True,multi=True):
+def main(onefold=True, uni=True, bi=True, multi=True):
     file_data = open('processed_data/data.json', 'r')
     data_set = json.load(file_data)
     file_label = open('processed_data/label.json', 'r')
@@ -73,7 +69,7 @@ def main(onefold=True, uni=True,bi=True,multi=True):
             onefold_estimation(data_set, data_label)
         elif bi:
             print("===== one fold, bigram =====")
-            onefold_estimation(data_set, data_label, False,True, False)
+            onefold_estimation(data_set, data_label, False, True, False)
         elif multi:
             print("===== one fold, multinomial =====")
             onefold_estimation(data_set, data_label, False, False, True)
@@ -85,9 +81,9 @@ def main(onefold=True, uni=True,bi=True,multi=True):
             print("===== nfold, bigram =====")
             nfold_estimation(data_set, data_label, False, True, False)
         elif multi:
-           print("===== one fold, multinomial =====")
-           nfold_estimation(data_set, data_label, False, False, True) 
+            print("===== nfold, multinomial =====")
+            nfold_estimation(data_set, data_label, False, False, True)
 
 
 if __name__ == "__main__":
-    main(False, False, True, False)
+    main(True, False, False, True)
