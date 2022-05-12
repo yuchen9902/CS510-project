@@ -1,4 +1,7 @@
 /processed_data
 /training_t2
-/.idea
+.DS_Store
+**/.DS_Store
+.idea
+.env
 **/__pycache__
