@@ -10,13 +10,9 @@ DROP = ['ID', 'INFO']
 LABEL_DICT = {'pos': 1, 'neg': 0}
 global pos_count
 global neg_count
-pos_count = 0
-neg_count = 0
+
 
 sample_dict = {'2017': 49692, '2018': 40744}
-
-
-# In[13]:
 
 
 # extract raw data from xml
@@ -43,9 +39,6 @@ def xml_to_json(year, label, curr_dict):
     print("number of " + label + " subjects in " + year + ":", subject_count)
     print("pieces of context:", context_count)
     print("===================================================")
-
-
-# In[26]:
 
 
 # extract only title and text
@@ -78,7 +71,6 @@ def get_text(year, label):
             clean_text = re.sub(r"[^A-Za-z0-9\s]+", "", l)
             clean_text = clean_text.replace("\n", " ")
             train_data.append(list(filter(None, clean_text.split())))
-            # train_data.append(clean_text)
             train_label.append(LABEL_DICT[label])
 
     print("equal? ", len(train_data) == len(train_label))
@@ -102,7 +94,6 @@ def get_json():
         json.dump(neg, f, indent=4)
 
 
-# In[43]:
 def sample_data(year, train_data, train_label):
     random_indices = random.sample(range(0, len(train_data)), sample_dict[year])
     data = [train_data[i] for i in random_indices]
@@ -124,9 +115,9 @@ def get_train_set():
             print("count: ", len(sampled_data))
             print("#######################")
 
-    with open('processed_data/split_data.json', 'w') as f:
+    with open('processed_data/data.json', 'w') as f:
         json.dump(train_data, f, indent=4)
-    with open('processed_data/split_label.json', 'w') as f:
+    with open('processed_data/label.json', 'w') as f:
         json.dump(train_label, f, indent=4)
     return train_data, train_label
 
@@ -134,13 +125,6 @@ def get_train_set():
 def main():
     # get_json()
     train_data, train_label = get_train_set()
-
-
-#     print(len(train_data))
-#     print(train_data)
-#     print("================")
-#     print(len(train_label))
-#     print(train_label)
 
 
 if __name__ == "__main__":

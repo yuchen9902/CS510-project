@@ -1,8 +1,11 @@
 import datetime
 import os
 import pickle
+import re
 from hashlib import md5
 from flask import Flask, request, render_template, redirect, url_for
+import nltk
+from nltk.stem import WordNetLemmatizer
 
 from database.database import Database
 from flask_login import LoginManager, login_user, login_required, UserMixin, current_user, logout_user
@@ -37,6 +40,7 @@ class ML:
         self.tfidf_vectorizer = pickle.load(open(file_tfidf, 'rb'))
 
     def predict(self, X_test):
+        X_test = [preprocess_data(X_test[0])]
         X_test = self.tfidf_vectorizer.transform(X_test)
         result = self.loaded_model.predict(X_test)
         return result
@@ -97,9 +101,10 @@ def post_api():
 
         # un the ML model on the post
         if 'title' in new_data:
-            text = new_data['content'] + new_data['title']
+            text = new_data['content'] + " " + new_data['title']
         else:
             text = new_data['content']
+
         pred = model.predict([text])
         print("content to be predict: ", text)
         print("predict result: ", pred)
@@ -137,6 +142,18 @@ def post_api():
 
     else:
         return 400
+
+
+def preprocess_data(text):
+    stopwords = nltk.corpus.stopwords.words('english')
+    lemmatizer = WordNetLemmatizer()
+    text = text.strip()
+    text = re.sub(r"[^A-Za-z0-9\s]+", "", text)
+    text = text.replace("\n", " ").lower()
+    text = list(filter(None, text.split()))
+    text = [lemmatizer.lemmatize(word) for word in text if word not in set(stopwords)]
+    text = " ".join(text)
+    return text
 
 
 @app.route('/profile')
@@ -207,9 +224,6 @@ def logout():
 
 if __name__ == "__main__":
     app.run()
-    # read model from file
     # content = ["What's the game plan? It was a nice run, Kev; had to close out some day. Nobody wins them all."]
-    # content = ["But the Fantastic Mr. Fox says dogs like blueberries. Or is that only beagles?"]
-    # content = ["dogs like blueberries"]
     # res = model.predict(content)
     # print(res)

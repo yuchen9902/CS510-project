@@ -2,11 +2,8 @@ import math
 import pickle
 import re
 
-import numpy as np
-import json
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn import metrics
 import nltk
 from nltk.stem import WordNetLemmatizer
 
@@ -204,14 +201,14 @@ def multinomial(train_set, train_labels, test_set, change_type=False):
 
     # text pre processing
     for i in range(0, len(train_set)):
-        review = [lemmatizer.lemmatize(word) for word in train_set[i] if not word in set(stopwords)]
+        review = [lemmatizer.lemmatize(word) for word in train_set[i] if word not in set(stopwords)]
         review = ' '.join(review)
         review = re.sub('[^a-zA-Z]', ' ', review)
         review = review.lower()
         train_X.append(review)
 
     for i in range(0, len(test_set)):
-        review = [lemmatizer.lemmatize(word) for word in test_set[i] if not word in set(stopwords)]
+        review = [lemmatizer.lemmatize(word) for word in test_set[i] if word not in set(stopwords)]
         review = ' '.join(review)
         review = re.sub('[^a-zA-Z]', ' ', review)
         review = review.lower()
